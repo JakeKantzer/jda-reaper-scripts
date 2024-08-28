@@ -52,6 +52,10 @@ function main(second_pass)
     reaper.ShowMessageBox("The first effect on this track is not ReaInsert, aborting.", "Error", 0)
   return end
 
+  -- Get the automation mode, store it, and set it to trim/read so effects bypass correctly
+  local orig_automation_mode = reaper.GetTrackAutomationMode(orig_track)
+  reaper.SetTrackAutomationMode(orig_track, 0)
+
   -- Deselect all items first
   reaper.Main_OnCommand(40289, 0)
 
@@ -91,13 +95,6 @@ function main(second_pass)
       if i ~= 0 then reaper.TrackFX_SetEnabled(orig_track, i, false) end
   end
 
-  -- Function to restore the bypass state of all FX in a track
-  function restore_bypass_state(track, fx_bypass_states)
-    for i, state in pairs(fx_bypass_states) do
-      reaper.TrackFX_SetEnabled(track, i, state)
-    end
-  end
-
   -- Render to new track
   bounce(second_pass)
 
@@ -106,6 +103,7 @@ function main(second_pass)
   if recall_render_speed_id == nil then return end
   reaper.Main_OnCommand(recall_render_speed_id, 0)
 
+  -- Assign the new track to a variable for later
   local new_track = reaper.GetSelectedTrack(0, 0)
 
   -- Get the number of FX in the source track
@@ -125,15 +123,18 @@ function main(second_pass)
   -- Unmute the original track
   reaper.SetMediaTrackInfo_Value(orig_track, "B_MUTE", 0)
 
+  -- Restore the original automation mode
+  reaper.SetTrackAutomationMode(orig_track, orig_automation_mode)
+
   -- Mute the items on the original track
   for i = 1, #selected_items do
       reaper.SetMediaItemInfo_Value(selected_items[i], "B_MUTE", 1)
   end
 
-  reaper.Undo_EndBlock('Realtime render MIDI items within time selection dry, ignoring first effect',-1)
-
   -- Update the arrange view to reflect the changes
   reaper.UpdateArrange()
+
+  reaper.Undo_EndBlock('Hardware synth render',-1)
 end
 
 return main
