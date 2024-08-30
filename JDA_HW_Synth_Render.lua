@@ -32,7 +32,7 @@ end
 
 function main(second_pass)
   reaper.Undo_BeginBlock()
-  
+
   -- Store the currently selected items and check that they share a track
   local orig_track
   local selected_items = {}
@@ -56,9 +56,14 @@ function main(second_pass)
 
   -- If we didn't end up with a track, check if one is selected already, otherwise bail
   if orig_track == nil then
+    local track_count = reaper.CountSelectedTracks(0)
+    if track_count > 0 then
+      reaper.ShowMessageBox("Please select one track or one or more items from a single track.", "Error", 0)
+    return end
+
     orig_track = reaper.GetSelectedTrack(0, 0)
     if orig_track == nil then
-      reaper.ShowMessageBox("Please select a track or one or more items from a single track.", "Error", 0)
+      reaper.ShowMessageBox("Please select one track or one or more items from a single track.", "Error", 0)
     return end
   end
 
