@@ -57,7 +57,7 @@ function main(second_pass)
   -- If we didn't end up with a track, check if one is selected already, otherwise bail
   if orig_track == nil then
     local track_count = reaper.CountSelectedTracks(0)
-    if track_count > 0 then
+    if track_count > 1 then
       reaper.ShowMessageBox("Please select one track or one or more items from a single track.", "Error", 0)
     return end
 
@@ -67,7 +67,7 @@ function main(second_pass)
     return end
   end
 
-  -- Select the original track
+  -- Select the original track in case it isn't selected
   reaper.SetOnlyTrackSelected(orig_track)
 
   -- Check that there's a loop
