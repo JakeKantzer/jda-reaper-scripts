@@ -31,22 +31,45 @@ function bounce(second_pass)
 end
 
 function main(second_pass)
-  -- Get the selected track
-  local orig_track = reaper.GetSelectedTrack(0, 0)
+  reaper.Undo_BeginBlock()
+  
+  -- Store the currently selected items and check that they share a track
+  local orig_track
+  local selected_items = {}
+  local num_selected_items = reaper.CountSelectedMediaItems(0)
+  for i = 0, num_selected_items - 1 do
+      selected_items[i+1] = reaper.GetSelectedMediaItem(0, i)
+      local current_track = reaper.GetMediaItemTrack(selected_items[i+1])
 
+      if orig_track == nil then
+        orig_track = current_track
+      elseif orig_track ~= current_track then
+        reaper.ShowMessageBox("Please only select items from a single track.", "Error", 0)
+      return end
+
+      -- If one of the items isn't MIDI, bail because we have no idea what's going on
+      local take = reaper.GetActiveTake(selected_items[i+1])
+      if take == nil or not reaper.TakeIsMIDI(take) then
+        reaper.ShowMessageBox("One or more of the selected items is not MIDI, aborting.", "Error", 0)
+      return end
+  end
+
+  -- If we didn't end up with a track, check if one is selected already, otherwise bail
   if orig_track == nil then
-    reaper.ShowMessageBox("Please select a single track.", "Error", 0)
-  return end
+    orig_track = reaper.GetSelectedTrack(0, 0)
+    if orig_track == nil then
+      reaper.ShowMessageBox("Please select a track or one or more items from a single track.", "Error", 0)
+    return end
+  end
+
+  -- Select the original track
+  reaper.SetOnlyTrackSelected(orig_track)
 
   -- Check that there's a loop
   local start_time, end_time = reaper.GetSet_LoopTimeRange(false, false, 0, 0, false)
   if start_time == end_time then
     reaper.ShowMessageBox("There is no loop set, aborting.", "Error", 0)
   return end
-
-  reaper.Undo_BeginBlock()
-
-
 
   -- Cut early if first effect isn't ReaInsert
   local first_fx, first_fx_name = reaper.TrackFX_GetFXName(orig_track, 0)
@@ -63,19 +86,6 @@ function main(second_pass)
 
   -- Select all items on selected tracks in current time selection
   reaper.Main_OnCommand(40718, 0)
-
-  -- Store the currently selected items
-  local selected_items = {}
-  local num_selected_items = reaper.CountSelectedMediaItems(0)
-  for i = 0, num_selected_items - 1 do
-      selected_items[i+1] = reaper.GetSelectedMediaItem(0, i)
-
-      -- If one of the items isn't MIDI, bail because we have no idea what's going on
-      local take = reaper.GetActiveTake(selected_items[i+1])
-      if take == nil or not reaper.TakeIsMIDI(take) then
-        reaper.ShowMessageBox("One or more of the selected items is not MIDI, aborting.", "Error", 0)
-      return end
-  end
 
   -- Store the original render speed
   store_render_speed_id = reaper.NamedCommandLookup("_XENAKIOS_STORERENDERSPEED")
