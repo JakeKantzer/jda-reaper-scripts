@@ -19,6 +19,8 @@
   + Initial Release
 --]]
 
+dofile(reaper.GetResourcePath().."/UserPlugins/ultraschall_api.lua")
+
 function bounce(second_pass)
   -- Render to new track
   if second_pass then
@@ -29,10 +31,11 @@ function bounce(second_pass)
 end
 
 function main(second_pass)
-  -- Only continue if exactly one track is selected
-  local track_count = reaper.CountSelectedTracks(0)
-  if track_count ~= 1 then 
-    reaper.ShowMessageBox("Please select a single track.", "Error", 0)  
+  -- Get the selected track
+  local orig_track = reaper.GetSelectedTrack(0, 0)
+
+  if orig_track == nil then
+    reaper.ShowMessageBox("Please select a single track.", "Error", 0)
   return end
 
   -- Check that there's a loop
@@ -43,8 +46,7 @@ function main(second_pass)
 
   reaper.Undo_BeginBlock()
 
-  -- Get the selected track
-  local orig_track = reaper.GetSelectedTrack(0, 0)
+
 
   -- Cut early if first effect isn't ReaInsert
   local first_fx, first_fx_name = reaper.TrackFX_GetFXName(orig_track, 0)
@@ -113,12 +115,16 @@ function main(second_pass)
   for i, state in pairs(fx_bypass_states) do
       reaper.TrackFX_SetEnabled(orig_track, i, state)
   end
+  
+  -- Get FX chunk from original track and send to new track (ultraschall needed for envelopes)
+  local orig_tsc_returned, orig_track_state_chunk = reaper.GetTrackStateChunk(orig_track, "", false)
+  local new_tsc_returned, new_track_state_chunk = reaper.GetTrackStateChunk(new_track, "", false)
+  local orig_track_fxsc = ultraschall.GetFXStateChunk(orig_track_state_chunk)
+  local new_fxsc_returned, new_modified_track_state_chunk = ultraschall.SetFXStateChunk(new_track_state_chunk, orig_track_fxsc)
+  reaper.SetTrackStateChunk(new_track, new_modified_track_state_chunk, false)
 
-  -- Copy all FX except for the first one
-  for i = 1, num_fx - 1 do
-      local fx_chunk = reaper.TrackFX_GetFXGUID(orig_track, i)
-      reaper.TrackFX_CopyToTrack(orig_track, i, new_track, reaper.TrackFX_GetCount(new_track), false)
-  end
+  -- Delete ReaInsert
+  reaper.TrackFX_Delete(new_track, 0)
 
   -- Unmute the original track
   reaper.SetMediaTrackInfo_Value(orig_track, "B_MUTE", 0)
