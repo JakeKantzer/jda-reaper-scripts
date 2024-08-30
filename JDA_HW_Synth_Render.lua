@@ -1,23 +1,11 @@
 --[[
- * ReaScript Name: Realtime render MIDI items within time selection dry, ignoring first effect
- * About: Meant to be used with tracks using ReaInsert with a hardware synthesizer. Bypasses all but first effect (ReaInsert), renders the items within the time selection to a new track, copies all but the first effect to the new track, restores the bypass states of the effects on the original track, and mutes the original MIDI item(s).
- * Instructions: Select a track using ReaInsert in the first FX slot for an instrument and set the time selection to one containing MIDI items on that track.
- * Author: Jake D'Arc
- * Author URI: https://linktr.ee/arclighthalo
- * Repository: 
- * Repository URI: 
- * Licence: MIT
- * Forum Thread: 
- * Forum Thread URI: 
- * REAPER: 7.21
- * Version: 1.0
---]]
-
---[[
- * Changelog:
- * v1.0 ( 2024-08-25 )
-  + Initial Release
---]]
+  @author Jake d'Arc
+  @license MIT
+  @version 1.0.0
+  @about Automatic real-time bouncing and FX chain copying for tracks using ReaInsert with synths
+  @changelog
+    - init
+]]
 
 dofile(reaper.GetResourcePath().."/UserPlugins/ultraschall_api.lua")
 
