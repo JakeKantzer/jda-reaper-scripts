@@ -27,12 +27,12 @@ function main(second_pass)
   -- If we didn't end up with a track, check if one is selected already, otherwise bail
   local selected_track_count = reaper.CountSelectedTracks(0)
   if selected_track_count > 1 then
-    reaper.ShowMessageBox("Please select one track or one or more items from a single track.", "Error", 0)
+    reaper.ShowMessageBox("Please select a single track.", "Error", 0)
   return end
 
   local orig_track = reaper.GetSelectedTrack(0, 0)
   if orig_track == nil then
-    reaper.ShowMessageBox("Please select one track or one or more items from a single track.", "Error", 0)
+    reaper.ShowMessageBox("Please select a track.", "Error", 0)
   return end
 
   -- Deselect all items first
